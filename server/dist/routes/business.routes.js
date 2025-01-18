@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var express_1 = require("express");
+var business_controller_1 = require("../controllers/business.controller");
+var auth_1 = require("../middleware/auth");
+var router = express_1.default.Router();
+router.post("/", auth_1.auth, business_controller_1.createBusiness);
+router.get("/", auth_1.auth, business_controller_1.getBusinesses);
+router.put("/:id", auth_1.auth, business_controller_1.updateBusiness);
+router.get("/:id", auth_1.auth, business_controller_1.getBusinessById);
+exports.default = router;
