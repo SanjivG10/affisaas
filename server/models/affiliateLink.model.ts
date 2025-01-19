@@ -17,9 +17,20 @@ const affiliateLinkSchema = new mongoose.Schema(
     clicks: { type: Number, default: 0 },
     conversions: { type: Number, default: 0 },
     commisionRate: { type: Number, default: 0 },
+    commissionType: {
+      type: String,
+      enum: ["percentage", "amount"],
+      default: "percentage",
+    },
+    commissionValue: { type: Number, default: 0 },
+    name: { type: String, required: true },
+    uniqueLink: { type: String, required: true, unique: true },
+    cookieDuration: { type: Number, default: 30 },
   },
   { timestamps: true }
 );
+
+affiliateLinkSchema.index({ uniqueLink: 1 }, { unique: true });
 
 export const AffiliateLink = mongoose.model<AffiliateLinkDocument>(
   "AffiliateLink",

@@ -33,9 +33,21 @@ export interface AffiliateLinkDocument extends Document {
   clicks: number;
   conversions: number;
   commisionRate: number;
+  commissionType: "percentage" | "amount";
+  commissionValue: number;
+  uniqueLink: string;
+  cookieDuration: number;
 }
 
 export interface JWTPayload {
   userId: string;
   email: string;
+}
+
+export interface TrackingCookieDocument extends Document {
+  id: string;
+  cookieId: string;
+  affiliateCode: string;
+  customerIdentifier: string;
+  expiresAt: Date;
 }

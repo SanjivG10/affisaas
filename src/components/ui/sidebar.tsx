@@ -12,6 +12,8 @@ import {
   LogOut,
   Menu,
   X,
+  Code,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "./button";
 import { PAGES } from "@/lib/urls";
@@ -42,6 +44,16 @@ const routes = [
     label: "Settings",
     icon: Settings,
     href: "/settings",
+  },
+  {
+    label: "Scripts",
+    icon: Code,
+    href: "/scripts",
+  },
+  {
+    label: "Support",
+    icon: HelpCircle,
+    href: "/support",
   },
 ];
 

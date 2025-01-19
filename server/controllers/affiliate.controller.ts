@@ -3,6 +3,7 @@ import { AffiliateLink } from "../models/affiliateLink.model";
 import { Business } from "../models/business.model";
 import { Conversion } from "../models/conversion.model";
 import { AffiliateLinkDocument } from "../types";
+import TrackingCookie from "../models/trackingCookie.model";
 
 export const createAffiliateLink = async (req: Request, res: Response) => {
   try {
@@ -51,43 +52,116 @@ export const getAffiliateLinks = async (req: Request, res: Response) => {
   }
 };
 
+// controllers/affiliate.controller.ts
+
 export const trackClick = async (req: Request, res: Response) => {
   try {
     const { code } = req.params;
-    const link = await AffiliateLink.findOneAndUpdate(
+    const { trackingId, customerId } = req.body;
+
+    const affiliateLink = await AffiliateLink.findOneAndUpdate(
       { code },
       { $inc: { clicks: 1 } },
       { new: true }
     );
 
-    if (!link) {
+    if (!affiliateLink) {
       res.status(404).json({ error: "Affiliate link not found" });
       return;
     }
 
-    res.json(link);
+    // Create tracking cookie record
+    const trackingCookie = new TrackingCookie({
+      cookieId: trackingId,
+      affiliateCode: code,
+      customerIdentifier: customerId,
+      expiresAt: new Date(Date.now() + affiliateLink.cookieDuration * 1000),
+    });
+
+    await trackingCookie.save();
+
+    res.cookie(
+      "affiliate_tracking",
+      {
+        trackingId,
+        customerId,
+      },
+      {
+        maxAge: affiliateLink.cookieDuration * 1000,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      }
+    );
+
+    res.json({
+      success: true,
+      message: "Click tracked successfully",
+    });
   } catch (error) {
-    res.status(500).json({ error: "Error tracking click", msg: error });
+    console.error("Click tracking error:", error);
+    res.status(500).json({ error: "Error tracking click" });
   }
 };
 
 export const trackConversion = async (req: Request, res: Response) => {
   try {
     const { code } = req.params;
-    const { orderId, orderAmount } = req.body;
-    const affiliateLink = await AffiliateLink.findOneAndUpdate(
-      { code },
-      { $inc: { conversions: 1 } },
-      { new: true }
-    );
+    const { orderId, orderAmount, cookieId, customerIdentifier } = req.body;
 
-    const convertedAmount = orderAmount * (affiliateLink?.commisionRate ?? 0);
+    if (!cookieId || !customerIdentifier || !orderId) {
+      res.status(400).json({ error: "Missing required tracking information" });
+      return;
+    }
+    const affiliateLink = await AffiliateLink.findOne({ code });
+
+    if (!affiliateLink) {
+      res.status(404).json({ error: "Affiliate link not found" });
+      return;
+    }
+
+    const existingConversion = await Conversion.findOne({
+      orderId,
+      affiliateCode: code,
+      customerIdentifier,
+    });
+
+    if (existingConversion) {
+      res.status(409).json({ error: "Conversion already tracked" });
+      return;
+    }
+
+    const cookieData = await TrackingCookie.findOne({ cookieId });
+    if (!cookieData) {
+      res.status(400).json({ error: "Invalid tracking cookie" });
+      return;
+    }
+
+    //
+    const cookieDurationInMs =
+      (affiliateLink?.cookieDuration ?? 30) * 24 * 60 * 60 * 1000;
+
+    const cookieAge = Date.now() - cookieData.createdAt.getTime();
+    if (cookieAge > cookieDurationInMs) {
+      res.status(400).json({ error: "Tracking cookie expired" });
+      return;
+    }
+
+    affiliateLink.conversions++;
+    await affiliateLink.save();
+
+    const convertedAmount =
+      affiliateLink.commissionType === "percentage"
+        ? orderAmount * (affiliateLink?.commisionRate ?? 0)
+        : affiliateLink?.commissionValue ?? 0;
 
     const conversion = new Conversion({
       amount: convertedAmount,
       orderId,
       affiliateCode: code,
       business: affiliateLink?.businessId,
+      customerIdentifier,
+      cookieId,
     });
 
     await conversion.save();
