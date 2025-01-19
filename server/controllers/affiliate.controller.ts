@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { AffiliateLink } from "../models/affiliateLink.model";
 import { Business } from "../models/business.model";
+import { Conversion } from "../models/conversion.model";
+import { AffiliateLinkDocument } from "../types";
 
 export const createAffiliateLink = async (req: Request, res: Response) => {
   try {
@@ -72,18 +74,32 @@ export const trackClick = async (req: Request, res: Response) => {
 export const trackConversion = async (req: Request, res: Response) => {
   try {
     const { code } = req.params;
-    const link = await AffiliateLink.findOneAndUpdate(
+    const { orderId, orderAmount } = req.body;
+    const affiliateLink = await AffiliateLink.findOneAndUpdate(
       { code },
       { $inc: { conversions: 1 } },
       { new: true }
     );
 
-    if (!link) {
+    const convertedAmount = orderAmount * (affiliateLink?.commisionRate ?? 0);
+
+    const conversion = new Conversion({
+      amount: convertedAmount,
+      orderId,
+      affiliateCode: code,
+      business: affiliateLink?.businessId,
+    });
+
+    await conversion.save();
+
+    if (!affiliateLink) {
       res.status(404).json({ error: "Affiliate link not found" });
       return;
     }
 
-    res.json(link);
+    res.json({
+      message: "Conversion tracked successfully",
+    });
   } catch (error) {
     res.status(500).json({ error: "Error tracking conversion", msg: error });
   }

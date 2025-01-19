@@ -5,7 +5,7 @@ import { Schema, model } from "mongoose";
 const conversionSchema = new Schema(
   {
     amount: Number,
-    affiliate: String,
+    affiliateCode: String,
     orderId: String,
     business: String,
   },

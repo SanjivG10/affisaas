@@ -32,6 +32,7 @@ export interface AffiliateLinkDocument extends Document {
   createdAt: Date;
   clicks: number;
   conversions: number;
+  commisionRate: number;
 }
 
 export interface JWTPayload {

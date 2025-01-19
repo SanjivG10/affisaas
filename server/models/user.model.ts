@@ -6,7 +6,6 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  website: { type: String },
   domain: { type: String },
   plan: {
     type: String,
@@ -14,6 +13,7 @@ const userSchema = new mongoose.Schema({
     default: "free",
   },
   createdAt: { type: Date, default: Date.now },
+  businessName: { type: String },
 });
 
 userSchema.pre("save", async function (next) {

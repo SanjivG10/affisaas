@@ -23,6 +23,7 @@ export const register = async (req: Request, res: Response) => {
 
     res.status(201).json({ user, token });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Error creating user", msg: error });
   }
 };
@@ -57,12 +58,12 @@ export const login = async (req: Request, res: Response) => {
 
 export const updateProfile = async (req: Request, res: Response) => {
   try {
-    const { name, website, domain } = req.body;
+    const { name, businessName, domain } = req.body;
     const userId = req.user?.userId;
 
     const user = await User.findByIdAndUpdate(
       userId,
-      { name, website, domain },
+      { name, businessName, domain },
       { new: true }
     );
 

@@ -17,7 +17,6 @@ const affiliateLinkSchema = new mongoose.Schema(
     clicks: { type: Number, default: 0 },
     conversions: { type: Number, default: 0 },
     commisionRate: { type: Number, default: 0 },
-    // we need to add orderId
   },
   { timestamps: true }
 );
